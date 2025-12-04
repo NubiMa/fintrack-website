@@ -224,7 +224,7 @@ const Settings = () => {
                       type="text"
                       value={profileData.name}
                       onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                      className="input w-full"
+                      className="input w-full custom-select"
                       required
                       disabled={loading}
                     />
@@ -237,7 +237,7 @@ const Settings = () => {
                       type="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                      className="input w-full"
+                      className="input w-full custom-select"
                       required
                       disabled={loading}
                     />
@@ -249,14 +249,14 @@ const Settings = () => {
                     <select
                       value={profileData.currency}
                       onChange={(e) => setProfileData({ ...profileData, currency: e.target.value })}
-                      className="input w-full"
+                      className="input w-full custom-select"
                       disabled={loading}
                     >
                       <option value="USD">USD - US Dollar ($)</option>
                       <option value="EUR">EUR - Euro (€)</option>
                       <option value="GBP">GBP - British Pound (£)</option>
                       <option value="JPY">JPY - Japanese Yen (¥)</option>
-                      <option value="INR">INR - Indian Rupee (₹)</option>
+                      <option value="INR">INR - Indonesian Rupiah (Rp)</option>
                     </select>
                   </div>
 
