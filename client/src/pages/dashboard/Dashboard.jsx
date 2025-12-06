@@ -5,6 +5,7 @@ import { transactionService } from '../../services/transactionService';
 import { reportService } from '../../services/reportService';
 import { budgetService } from '../../services/budgetService';
 import { useAuth } from '../../context/AuthContext';
+import currencyService from '../../services/currencyService';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -18,9 +19,11 @@ const Dashboard = () => {
     currentBalance: 0
   });
   const [loading, setLoading] = useState(true);
+  const [userCurrency, setUserCurrency] = useState('USD');
 
   useEffect(() => {
     loadDashboardData();
+    setUserCurrency(currencyService.getUserCurrency());
   }, []);
 
   const loadDashboardData = async () => {
@@ -90,13 +93,13 @@ const Dashboard = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="card border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm mb-1">Total Income</p>
               <h3 className="text-2xl font-bold text-green-500">
-                ${parseFloat(summary.totalIncome || 0).toFixed(2)}
+                {currencyService.format(summary.totalIncome || 0, userCurrency)}
               </h3>
             </div>
             <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
@@ -110,7 +113,7 @@ const Dashboard = () => {
             <div>
               <p className="text-gray-400 text-sm mb-1">Total Expenses</p>
               <h3 className="text-2xl font-bold text-red-500">
-                ${parseFloat(summary.totalExpenses || 0).toFixed(2)}
+                {currencyService.format(summary.totalExpenses || 0, userCurrency)}
               </h3>
             </div>
             <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
@@ -124,7 +127,58 @@ const Dashboard = () => {
             <div>
               <p className="text-gray-400 text-sm mb-1">Current Balance</p>
               <h3 className="text-2xl font-bold glow-text">
-                ${parseFloat(summary.currentBalance || 0).toFixed(2)}
+                {currencyService.format(summary.currentBalance || 0, userCurrency)}
+              </h3>
+            </div>
+            <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card border-l-4 border-green-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Total Income</p>
+              <h3 className="text-2xl font-bold text-green-500">
+                {summary.totalIncome !== undefined 
+                  ? currencyService.format(summary.totalIncome, userCurrency)
+                  : 'Loading...'}
+              </h3>
+            </div>
+            <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-green-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card border-l-4 border-red-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Total Expenses</p>
+              <h3 className="text-2xl font-bold text-red-500">
+                {summary.totalExpenses !== undefined
+                  ? currencyService.format(summary.totalExpenses, userCurrency)
+                  : 'Loading...'}
+              </h3>
+            </div>
+            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+              <TrendingDown className="w-6 h-6 text-red-500" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card border-l-4 border-primary">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm mb-1">Current Balance</p>
+              <h3 className="text-2xl font-bold glow-text">
+                {summary.currentBalance !== undefined
+                  ? currencyService.format(summary.currentBalance, userCurrency)
+                  : 'Loading...'}
               </h3>
             </div>
             <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
@@ -176,8 +230,8 @@ const Dashboard = () => {
                             transaction.type === 'income' ? 'text-green-500' : 'text-red-500'
                           }`}
                         >
-                          {transaction.type === 'income' ? '+' : '-'}$
-                          {parseFloat(transaction.amount).toFixed(2)}
+                          {transaction.type === 'income' ? '+' : '-'}
+                          {currencyService.format(transaction.amount, userCurrency)}
                         </td>
                         <td className="py-3 px-2 text-right">
                           <span
@@ -240,8 +294,8 @@ const Dashboard = () => {
                       transaction.type === 'income' ? 'text-green-500' : 'text-red-500'
                     }`}
                   >
-                    {transaction.type === 'income' ? '+' : '-'}$
-                    {parseFloat(transaction.amount).toFixed(2)}
+                    {transaction.type === 'income' ? '+' : '-'}
+                    {currencyService.format(transaction.amount, userCurrency)}
                   </p>
                 </div>
               ))}
@@ -280,7 +334,9 @@ const Dashboard = () => {
                   {/* Center Text */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <p className="text-gray-400 text-xs">Total Spent</p>
-                    <p className="text-2xl font-bold glow-text">${totalSpent.toFixed(0)}</p>
+                    <p className="text-2xl font-bold glow-text">
+                      {currencyService.format(totalSpent, userCurrency)}
+                    </p>
                   </div>
                 </div>
 
@@ -334,7 +390,7 @@ const Dashboard = () => {
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-sm">{budget.category}</h4>
                         <p className="text-xs text-gray-400">
-                          ${spent.toFixed(0)} / ${limitAmount.toFixed(0)}
+                          {currencyService.format(spent, userCurrency, false)} / {currencyService.format(limitAmount, userCurrency, false)}
                         </p>
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">

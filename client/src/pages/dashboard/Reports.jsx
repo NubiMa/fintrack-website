@@ -3,6 +3,7 @@ import { Download, Calendar, TrendingUp, TrendingDown, DollarSign } from 'lucide
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { reportService } from '../../services/reportService';
 import toast from 'react-hot-toast';
+import currencyService from '../../services/currencyService';
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState({
@@ -14,9 +15,11 @@ const Reports = () => {
   const [categoryData, setCategoryData] = useState([]);
   const [savingsData, setSavingsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userCurrency, setUserCurrency] = useState('USD');
 
   useEffect(() => {
     loadReports();
+    setUserCurrency(currencyService.getUserCurrency());
   }, [dateRange]);
 
   const loadReports = async () => {
@@ -56,15 +59,16 @@ const Reports = () => {
       const data = `FinTrack Financial Report
 Generated: ${new Date().toLocaleDateString()}
 Period: ${dateRange.startDate} to ${dateRange.endDate}
+Currency: ${userCurrency}
 
 SUMMARY
-Total Income: $${summary?.totalIncome || 0}
-Total Expenses: $${summary?.totalExpenses || 0}
-Current Balance: $${summary?.currentBalance || 0}
+Total Income: ${currencyService.format(summary?.totalIncome || 0, userCurrency)}
+Total Expenses: ${currencyService.format(summary?.totalExpenses || 0, userCurrency)}
+Current Balance: ${currencyService.format(summary?.currentBalance || 0, userCurrency)}
 Savings Rate: ${summary?.savingsRate || 0}%
 
 CATEGORY BREAKDOWN
-${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
+${categoryData.map(cat => `${cat.name}: ${currencyService.format(cat.value, userCurrency)}`).join('\n')}
 `;
 
       const blob = new Blob([data], { type: 'text/plain' });
@@ -90,6 +94,12 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
       </div>
     );
   }
+
+  const calculateTotalSpent = () => {
+    return categoryData.reduce((sum, cat) => sum + parseFloat(cat.value), 0);
+  };
+
+  const totalSpent = calculateTotalSpent();
 
   return (
     <div className="space-y-6">
@@ -148,10 +158,10 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <h3 className="text-2xl font-bold text-green-500">
-              ${parseFloat(summary.totalIncome).toFixed(2)}
+              {currencyService.format(summary.totalIncome, userCurrency)}
             </h3>
             <p className="text-sm text-gray-400 mt-1">
-              Avg: ${parseFloat(summary.avgIncome || 0).toFixed(2)}
+              Avg: {currencyService.format(summary.avgIncome || 0, userCurrency)}
             </p>
           </div>
 
@@ -161,10 +171,10 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
               <TrendingDown className="w-5 h-5 text-red-500" />
             </div>
             <h3 className="text-2xl font-bold text-red-500">
-              ${parseFloat(summary.totalExpenses).toFixed(2)}
+              {currencyService.format(summary.totalExpenses, userCurrency)}
             </h3>
             <p className="text-sm text-gray-400 mt-1">
-              Avg: ${parseFloat(summary.avgExpense || 0).toFixed(2)}
+              Avg: {currencyService.format(summary.avgExpense || 0, userCurrency)}
             </p>
           </div>
 
@@ -174,7 +184,7 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
               <DollarSign className="w-5 h-5 text-primary" />
             </div>
             <h3 className="text-2xl font-bold glow-text">
-              ${parseFloat(summary.currentBalance).toFixed(2)}
+              {currencyService.format(summary.currentBalance, userCurrency)}
             </h3>
             <p className="text-sm text-gray-400 mt-1">
               {summary.savingsRate}% of income
@@ -226,51 +236,57 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
           )}
         </div>
 
-        {/* Category Breakdown */}
+        {/* Category Breakdown with Modern Donut Chart */}
         <div className="card">
-          <h3 className="text-xl font-bold mb-4">Expense by Category</h3>
+          <h3 className="text-xl font-bold mb-4">Expenses by Category</h3>
           {categoryData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1A1A1A',
-                      border: '1px solid #2A2A2A',
-                      borderRadius: '8px'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              
-              {/* Legend */}
-              <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="space-y-6">
+              {/* Modern Donut Chart */}
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={75}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                {/* Center Text */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <p className="text-gray-400 text-xs">Total Spent</p>
+                  <p className="text-2xl font-bold glow-text">
+                    {currencyService.format(totalSpent, userCurrency)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Legend Grid */}
+              <div className="grid grid-cols-2 gap-3">
                 {categoryData.map((item, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full"
+                      className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-gray-400 truncate">
-                      {item.name} ({item.percentage}%)
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-gray-500">{item.percentage}%</p>
+                    </div>
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           ) : (
             <div className="h-72 flex items-center justify-center text-gray-400">
               No expense data
@@ -350,7 +366,7 @@ ${categoryData.map(cat => `${cat.name}: $${cat.value}`).join('\n')}
                       <span>{cat.name}</span>
                     </td>
                     <td className="py-3 px-4 text-right font-semibold">
-                      ${parseFloat(cat.value).toFixed(2)}
+                      {currencyService.format(cat.value, userCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right text-gray-400">
                       {cat.percentage}%

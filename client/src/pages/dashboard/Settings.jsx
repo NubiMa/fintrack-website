@@ -39,22 +39,30 @@ const Settings = () => {
   ];
 
   const handleProfileUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      await userService.updateProfile(profileData);
-      toast.success('Profile updated successfully');
-      
-      // Update local storage
-      const updatedUser = { ...user, ...profileData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to update profile');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    await userService.updateProfile(profileData);
+    toast.success('Profile updated successfully');
+    
+    // Update local storage
+    const updatedUser = { ...user, ...profileData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    
+    // Clear currency cache to force refresh with new currency
+    localStorage.removeItem('exchange_rates');
+    
+    // Reload page to apply currency changes
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    toast.error(error.response?.data?.error || 'Failed to update profile');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();

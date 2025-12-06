@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Edit2, Trash2, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { transactionService } from '../../services/transactionService';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import currencyService from '../../services/currencyService';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  const [userCurrency, setUserCurrency] = useState('USD');
   const [filters, setFilters] = useState({
     type: '',
     category: '',
@@ -41,6 +43,7 @@ const Transactions = () => {
 
   useEffect(() => {
     loadTransactions();
+    setUserCurrency(currencyService.getUserCurrency());
   }, [filters]);
 
   const loadTransactions = async () => {
@@ -164,19 +167,19 @@ const Transactions = () => {
         <div className="card border-l-4 border-green-500">
           <p className="text-gray-400 text-sm mb-1">Total Income</p>
           <h3 className="text-2xl font-bold text-green-500">
-            ${totalIncome.toFixed(2)}
+            {currencyService.format(totalIncome, userCurrency)}
           </h3>
         </div>
         <div className="card border-l-4 border-red-500">
           <p className="text-gray-400 text-sm mb-1">Total Expenses</p>
           <h3 className="text-2xl font-bold text-red-500">
-            ${totalExpenses.toFixed(2)}
+            {currencyService.format(totalExpenses, userCurrency)}
           </h3>
         </div>
         <div className="card border-l-4 border-primary">
           <p className="text-gray-400 text-sm mb-1">Net Balance</p>
           <h3 className="text-2xl font-bold glow-text">
-            ${(totalIncome - totalExpenses).toFixed(2)}
+            {currencyService.format(totalIncome - totalExpenses, userCurrency)}
           </h3>
         </div>
       </div>
@@ -278,7 +281,8 @@ const Transactions = () => {
                     <td className={`py-3 px-4 text-right font-semibold ${
                       transaction.type === 'income' ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {transaction.type === 'income' ? '+' : '-'}${parseFloat(transaction.amount).toFixed(2)}
+                      {transaction.type === 'income' ? '+' : '-'}
+                      {currencyService.format(transaction.amount, userCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className={`px-2 py-1 rounded text-xs ${
@@ -367,7 +371,7 @@ const Transactions = () => {
               {/* Amount & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount</label>
+                  <label className="block text-sm font-medium mb-2">Amount ({currencyService.CURRENCY_SYMBOLS[userCurrency]})</label>
                   <input
                     type="number"
                     step="0.01"

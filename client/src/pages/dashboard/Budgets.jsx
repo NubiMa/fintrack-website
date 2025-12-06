@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { budgetService } from '../../services/budgetService';
 import toast from 'react-hot-toast';
+import currencyService from '../../services/currencyService';
 
 const Budgets = () => {
   const [budgets, setBudgets] = useState([]);
@@ -9,6 +10,7 @@ const Budgets = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [userCurrency, setUserCurrency] = useState('USD');
 
   const [formData, setFormData] = useState({
     category: '',
@@ -31,6 +33,7 @@ const Budgets = () => {
 
   useEffect(() => {
     loadBudgets();
+    setUserCurrency(currencyService.getUserCurrency());
   }, []);
 
   const loadBudgets = async () => {
@@ -223,19 +226,19 @@ const Budgets = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-400">Spent</span>
                     <span className="font-semibold text-red-500">
-                      ${spent.toFixed(2)}
+                      {currencyService.format(spent, userCurrency)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Limit</span>
                     <span className="font-semibold">
-                      ${limitAmount.toFixed(2)}
+                      {currencyService.format(limitAmount, userCurrency)}
                     </span>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-white/10">
                     <span className="text-gray-400">Remaining</span>
                     <span className={`font-semibold ${remaining >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      ${Math.abs(remaining).toFixed(2)}
+                      {currencyService.format(Math.abs(remaining), userCurrency)}
                     </span>
                   </div>
                 </div>
@@ -291,7 +294,9 @@ const Budgets = () => {
 
               {/* Limit Amount */}
               <div>
-                <label className="block text-sm font-medium mb-2">Budget Limit ($)</label>
+                <label className="block text-sm font-medium mb-2">
+                  Budget Limit ({currencyService.CURRENCY_SYMBOLS[userCurrency]})
+                </label>
                 <input
                   type="number"
                   step="0.01"
