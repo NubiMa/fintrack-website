@@ -11,6 +11,7 @@ const Transactions = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [userCurrency, setUserCurrency] = useState('USD');
+  const [submitting, setSubmitting] = useState(false); // 🆕 ADD THIS
   const [filters, setFilters] = useState({
     type: '',
     category: '',
@@ -39,6 +40,18 @@ const Transactions = () => {
       'Travel',
       'Other Expense'
     ]
+  };
+
+  // 🆕 SAFE CURRENCY SYMBOL GETTER
+  const getCurrencySymbol = (currency) => {
+    const symbols = {
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      IDR: 'Rp'
+    };
+    return symbols[currency] || '$';
   };
 
   useEffect(() => {
@@ -74,6 +87,10 @@ const Transactions = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // 🔥 FIX - Prevent event bubbling
+    
+    if (submitting) return; // 🆕 Prevent double submit
+    setSubmitting(true); // 🆕 SET SUBMITTING STATE
 
     try {
       if (editingTransaction) {
@@ -89,6 +106,8 @@ const Transactions = () => {
       loadTransactions();
     } catch (error) {
       toast.error(error.response?.data?.error || 'Operation failed');
+    } finally {
+      setSubmitting(false); // 🆕 RESET SUBMITTING STATE
     }
   };
 
@@ -132,6 +151,7 @@ const Transactions = () => {
   };
 
   const handleModalClose = () => {
+    if (submitting) return; // 🆕 Prevent close while submitting
     setShowModal(false);
     resetForm();
   };
@@ -156,6 +176,7 @@ const Transactions = () => {
         <button
           onClick={() => setShowModal(true)}
           className="btn-primary flex items-center gap-2"
+          type="button" // 🔥 FIX
         >
           <Plus className="w-5 h-5" />
           Add Transaction
@@ -298,12 +319,14 @@ const Transactions = () => {
                         <button
                           onClick={() => handleEdit(transaction)}
                           className="p-2 hover:bg-white/10 rounded transition text-primary"
+                          type="button" // 🔥 FIX
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(transaction.id)}
                           className="p-2 hover:bg-white/10 rounded transition text-red-500"
+                          type="button" // 🔥 FIX
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -317,10 +340,16 @@ const Transactions = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal - 🔥 FIXED VERSION */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }} // 🔥 FIX - Highest z-index
+        >
+          <div 
+            className="card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()} // 🔥 FIX - Prevent close on content click
+          >
             <h2 className="text-2xl font-bold mb-6">
               {editingTransaction ? 'Edit Transaction' : 'Add Transaction'}
             </h2>
@@ -338,6 +367,7 @@ const Transactions = () => {
                       checked={formData.type === 'income'}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value, category: '' })}
                       className="w-4 h-4 text-primary"
+                      disabled={submitting}
                     />
                     <span>Income</span>
                   </label>
@@ -349,6 +379,7 @@ const Transactions = () => {
                       checked={formData.type === 'expense'}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value, category: '' })}
                       className="w-4 h-4 text-primary"
+                      disabled={submitting}
                     />
                     <span>Expense</span>
                   </label>
@@ -365,13 +396,16 @@ const Transactions = () => {
                   className="input w-full custom-select"
                   placeholder="e.g., Grocery shopping"
                   required
+                  disabled={submitting}
                 />
               </div>
 
               {/* Amount & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Amount ({currencyService.CURRENCY_SYMBOLS[userCurrency]})</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Amount ({getCurrencySymbol(userCurrency)}) {/* 🔥 FIX */}
+                  </label>
                   <input
                     type="number"
                     step="0.01"
@@ -381,6 +415,7 @@ const Transactions = () => {
                     className="input w-full custom-select"
                     placeholder="0.00"
                     required
+                    disabled={submitting}
                   />
                 </div>
                 <div>
@@ -391,6 +426,7 @@ const Transactions = () => {
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className="input w-full custom-select"
                     required
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -403,6 +439,7 @@ const Transactions = () => {
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="input w-full custom-select"
                   required
+                  disabled={submitting}
                 >
                   <option value="">Select category</option>
                   {categories[formData.type].map((cat) => (
@@ -420,18 +457,31 @@ const Transactions = () => {
                   className="input w-full custom-select"
                   rows="3"
                   placeholder="Additional details..."
+                  disabled={submitting}
                 />
               </div>
 
               {/* Buttons */}
               <div className="flex gap-4">
-                <button type="submit" className="btn-primary flex-1">
-                  {editingTransaction ? 'Update' : 'Create'} Transaction
+                <button 
+                  type="submit" 
+                  className="btn-primary flex-1"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-dark"></div>
+                      Saving...
+                    </div>
+                  ) : (
+                    `${editingTransaction ? 'Update' : 'Create'} Transaction`
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={handleModalClose}
                   className="btn-secondary flex-1"
+                  disabled={submitting}
                 >
                   Cancel
                 </button>

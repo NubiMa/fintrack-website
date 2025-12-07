@@ -31,6 +31,18 @@ const Budgets = () => {
     'Other Expense'
   ];
 
+  // 🆕 SAFE CURRENCY SYMBOL GETTER
+  const getCurrencySymbol = (currency) => {
+    const symbols = {
+      USD: '$',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+      IDR: 'Rp'
+    };
+    return symbols[currency] || '$';
+  };
+
   useEffect(() => {
     loadBudgets();
     setUserCurrency(currencyService.getUserCurrency());
@@ -52,6 +64,7 @@ const Budgets = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation(); // 🔥 PREVENT BUBBLING
     setSubmitting(true);
 
     try {
@@ -144,6 +157,7 @@ const Budgets = () => {
         <button
           onClick={() => setShowModal(true)}
           className="btn-primary flex items-center gap-2"
+          type="button" // 🔥 FIX
         >
           <Plus className="w-5 h-5" />
           Add Budget
@@ -165,6 +179,7 @@ const Budgets = () => {
           <button
             onClick={() => setShowModal(true)}
             className="btn-primary inline-flex items-center gap-2"
+            type="button" // 🔥 FIX
           >
             <Plus className="w-5 h-5" />
             Create Budget
@@ -248,6 +263,7 @@ const Budgets = () => {
                   <button
                     onClick={() => handleEdit(budget)}
                     className="flex-1 btn-secondary text-sm py-2 flex items-center justify-center gap-2"
+                    type="button" // 🔥 FIX
                   >
                     <Edit2 className="w-4 h-4" />
                     Edit
@@ -255,6 +271,7 @@ const Budgets = () => {
                   <button
                     onClick={() => handleDelete(budget.id)}
                     className="flex-1 border-2 border-red-500 text-red-500 px-4 py-2 rounded-lg hover:bg-red-500/10 transition-all text-sm flex items-center justify-center gap-2"
+                    type="button" // 🔥 FIX
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete
@@ -268,8 +285,14 @@ const Budgets = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="card max-w-md w-full">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }} // 🔥 FIX
+        >
+          <div 
+            className="card max-w-md w-full"
+            onClick={(e) => e.stopPropagation()} // 🔥 FIX
+          >
             <h2 className="text-2xl font-bold mb-6">
               {editingBudget ? 'Edit Budget' : 'Create Budget'}
             </h2>
@@ -292,10 +315,10 @@ const Budgets = () => {
                 </select>
               </div>
 
-              {/* Limit Amount */}
+              {/* Limit Amount - 🔥 FIXED */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Budget Limit ({currencyService.CURRENCY_SYMBOLS[userCurrency]})
+                  Budget Limit ({getCurrencySymbol(userCurrency)})
                 </label>
                 <input
                   type="number"
